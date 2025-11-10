@@ -16,7 +16,7 @@ model User {
   password              String?
   firstName             String?
   lastName              String?
-  role                  String           @default("FREELANCER")
+  role                  String           @default("FREELANCER") // FREELANCER, AI_TALENT, FIRM_MEMBER, ADMIN
   bio                   String?
   jobTitle              String?
   location              String?
@@ -26,11 +26,37 @@ model User {
   nextAvailability      DateTime?
   googleId              String?          @unique
   linkedinId            String?          @unique
+  githubUrl             String?
   oauthProvider         String?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   hourlyRate            Float?
+  hourlyRateMax         Float?           // Max rate for range
   currency              String           @default("USD")
+
+  // AI Talent Marketplace Fields
+  isAITalent            Boolean          @default(false) // True if user is in talent marketplace
+  talentRole            String?          // ML_ENGINEER, DATA_SCIENTIST, LLM_ENGINEER, etc.
+  talentTier            String?          // JUNIOR, MID, SENIOR, EXPERT, PRINCIPAL
+  employmentPreference  String?          // CONTRACT, TEMP_TO_PERM, PERMANENT, ANY
+  timezone              String?
+
+  // Verification Fields
+  verificationStatus    String           @default("UNVERIFIED") // UNVERIFIED, PENDING, UNDER_REVIEW, VERIFIED, VERIFIED_EXPERT, REJECTED
+  verificationTier      String?          // JUNIOR, MID, SENIOR, EXPERT, PRINCIPAL (assigned after verification)
+  verificationData      String?          @default("{}") // JSON: AI analysis results, scores
+  verificationDate      DateTime?        // Date when verified
+  verifiedBy            String?          // Admin user ID who verified
+
+  // AI Skill Scores (from verification)
+  aiSkillScore          Int?             // 0-100, AI-calculated skill proficiency
+  portfolioScore        Int?             // 0-100, AI-evaluated portfolio quality
+  experienceScore       Int?             // 0-100, AI-validated experience
+  overallScore          Int?             // 0-100, weighted average
+
+  // Availability Status
+  availabilityStatus    String           @default("AVAILABLE") // AVAILABLE, BUSY, NOT_LOOKING
+
   following             Follow[]         @relation("UserFollowing")
   followers             Follow[]         @relation("UserFollowers")
   receivedInvitations   Invitation[]     @relation("InvitationReceiver")
@@ -58,6 +84,10 @@ model User {
   @@index([location])
   @@index([googleId])
   @@index([linkedinId])
+  @@index([verificationStatus])
+  @@index([talentTier])
+  @@index([isAITalent])
+  @@index([availabilityStatus])
 }
 
 model Team {
@@ -66,14 +96,47 @@ model Team {
   slug            String           @unique
   description     String?
   avatar          String?
-  type            String           @default("TEAM")
+  type            String           @default("TEAM") // TEAM, COMPANY, ORGANIZATION, DEPARTMENT, AI_CONSULTING_FIRM, AI_STUDIO, ML_AGENCY, DATA_SCIENCE_FIRM, AI_RESEARCH_LAB
   subTeamCategory String?          // For sub-teams: ENGINEERING, MARKETING, DESIGN, HR, SALES, PRODUCT, OPERATIONS, FINANCE, LEGAL, SUPPORT, OTHER
   city            String?
+  country         String?
+  website         String?
   ownerId         String
   parentTeamId    String?          // For sub-teams
   isMainTeam      Boolean          @default(true)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  // AI Consulting Partner Fields
+  isConsultingFirm  Boolean        @default(false) // True if this is an AI consulting firm
+  partnerTier       String?        // EMERGING, ESTABLISHED, PREMIER, ENTERPRISE
+  verificationStatus String        @default("UNVERIFIED") // UNVERIFIED, PENDING, UNDER_REVIEW, VERIFIED, VERIFIED_PREMIUM, REJECTED
+  verificationData  String?        @default("{}") // JSON: verification details, scores
+  verificationDate  DateTime?
+  verifiedBy        String?        // Admin user ID
+
+  // Specializations (stored as JSON array)
+  aiSpecializations String?        @default("[]") // JSON: ["LLM_INTEGRATION", "COMPUTER_VISION", etc.]
+  techStack         String?        @default("[]") // JSON: ["PyTorch", "TensorFlow", etc.]
+  industries        String?        @default("[]") // JSON: ["Healthcare", "Finance", etc.]
+
+  // Delivery Models
+  deliveryModels    String?        @default("[]") // JSON: ["ONSITE", "NEARSHORE", "OFFSHORE", "HYBRID"]
+  primaryLocation   String?        // Main office location
+  officeLocations   String?        @default("[]") // JSON: Multiple office locations
+
+  // Team Statistics
+  teamSize          Int?           // Number of consultants
+  foundedYear       Int?
+  projectsCompleted Int            @default(0)
+  avgRating         Float?         // Average client rating
+  responseRate      Float?         // Response rate percentage
+
+  // Pricing (optional, can be set later)
+  pricingModel      String?        // FIXED_PRICE, TIME_MATERIAL, STAFF_AUG, MANAGED_SERVICES, HYBRID
+  minProjectBudget  Int?
+  currency          String?        @default("USD")
+
   invitations     Invitation[]
   emailInvitations EmailInvitation[]
   messages        Message[]
@@ -91,20 +154,30 @@ model Team {
   @@index([type])
   @@index([parentTeamId])
   @@index([subTeamCategory])
+  @@index([isConsultingFirm])
+  @@index([partnerTier])
+  @@index([verificationStatus])
 }
 
 model TeamMember {
   id       String   @id @default(uuid())
-  role     String   @default("MEMBER")
+  role     String   @default("MEMBER") // OWNER, ADMIN, MEMBER
   userId   String
   teamId   String
   joinedAt DateTime @default(now())
+
+  // Consulting Role Fields (for AI consulting firms)
+  consultingRole String?  // SENIOR_PARTNER, PARTNER, ENGAGEMENT_MANAGER, SENIOR_ML_ENGINEER, ML_ENGINEER, etc.
+  hourlyRate     Float?   // Member's hourly rate (for consulting billing)
+  billable       Boolean  @default(true) // Is this member billable to clients?
+
   team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, teamId])
   @@index([userId])
   @@index([teamId])
+  @@index([consultingRole])
 }
 
 model Invitation {
@@ -203,21 +276,37 @@ model Notification {
 model Skill {
   id        String      @id @default(uuid())
   name      String      @unique
-  category  String?
+  category  String?     // AI_SPECIALIZATION, TECH_STACK, SOFT_SKILL, INDUSTRY, etc.
+  subcategory String?   // LLM, COMPUTER_VISION, NLP, MLOPS, etc. (for AI_SPECIALIZATION)
+  description String?   // Brief description of the skill
+  isAISkill   Boolean   @default(false) // True if this is an AI/ML skill
   createdAt DateTime    @default(now())
   users     UserSkill[]
+
+  @@index([category])
+  @@index([isAISkill])
 }
 
 model UserSkill {
   id      String @id @default(uuid())
   userId  String
   skillId String
+
+  // Proficiency and Verification
+  proficiency String? @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+  yearsOfExperience Int? // Years of experience with this skill
+  verified Boolean @default(false) // True if AI verified this skill
+  verificationScore Int? // 0-100, AI confidence in this skill claim
+  lastUsed DateTime? // When skill was last used (from portfolio/experience)
+
   skill   Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillId])
   @@index([userId])
   @@index([skillId])
+  @@index([proficiency])
+  @@index([verified])
 }
 
 model Portfolio {
@@ -339,6 +428,18 @@ model JobPosting {
   createdBy    String
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+
+  // Talent Marketplace Fields
+  jobCategory  String           @default("REGULAR") // REGULAR, TALENT_HIRE (for consulting firms hiring talent)
+  talentRole   String?          // ML_ENGINEER, DATA_SCIENTIST, etc. (for talent hires)
+  employmentType String?        // CONTRACT, TEMP_TO_PERM, PERMANENT (for talent hires)
+  requiredTier String?          // JUNIOR, MID, SENIOR, EXPERT, PRINCIPAL (minimum tier required)
+  requiredSkills String?        @default("[]") // JSON: ["PyTorch", "Transformers", etc.]
+  duration     String?          // Duration for contract roles (e.g., "3 months", "6-12 months")
+  startDate    DateTime?        // Desired start date
+  hourlyRateMin Float?          // Min hourly rate for talent (if applicable)
+  hourlyRateMax Float?          // Max hourly rate for talent
+
   team         Team             @relation("TeamJobPostings", fields: [teamId], references: [id], onDelete: Cascade)
   subTeam      Team?            @relation("SubTeamJobPostings", fields: [subTeamId], references: [id], onDelete: SetNull)
   creator      User             @relation(fields: [createdBy], references: [id])
@@ -352,18 +453,31 @@ model JobPosting {
   @@index([subTeamId, status])
   @@index([status, isFeatured])
   @@index([status, isSponsored])
+  @@index([jobCategory])
+  @@index([talentRole])
+  @@index([employmentType])
 }
 
 model JobApplication {
   id           String      @id @default(uuid())
   jobId        String
   userId       String
-  status       String      @default("PENDING") // PENDING, REVIEWING, ACCEPTED, REJECTED
+  status       String      @default("PENDING") // PENDING, REVIEWING, ACCEPTED, REJECTED, HIRED
   coverLetter  String?
   resumeUrl    String?
   portfolioUrl String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+
+  // Talent Hire Fields (if this is a talent marketplace hire)
+  proposedRate Float?      // Talent's proposed hourly rate
+  availability String?     // Talent's availability (e.g., "Available immediately", "2 weeks notice")
+  interviewDate DateTime?  // Scheduled interview date
+  hiredDate    DateTime?   // Date when talent was hired
+  contractUrl  String?     // Generated contract document URL
+  commissionAmount Float?  // Platform commission amount
+  commissionPaid Boolean   @default(false) // Has commission been paid?
+
   job          JobPosting  @relation(fields: [jobId], references: [id], onDelete: Cascade)
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -371,4 +485,138 @@ model JobApplication {
   @@index([jobId])
   @@index([userId])
   @@index([status])
+  @@index([hiredDate])
+}
+
+// New model for Education tracking
+model Education {
+  id            String    @id @default(uuid())
+  userId        String
+  institution   String
+  degree        String    // BS, MS, PhD, Certificate, etc.
+  fieldOfStudy  String    // Computer Science, Machine Learning, etc.
+  startDate     DateTime?
+  endDate       DateTime?
+  present       Boolean   @default(false)
+  gpa           Float?
+  description   String?
+  verified      Boolean   @default(false) // AI or admin verified
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// New model for Consulting Engagements (Projects with Clients)
+model Engagement {
+  id                String    @id @default(uuid())
+  title             String
+  description       String?
+  clientName        String?   // Can be anonymous
+  consultingFirmId  String    // The consulting firm (Team)
+  clientId          String?   // Optional: If client is on platform
+  status            String    @default("PROPOSAL") // PROPOSAL, ACTIVE, COMPLETED, CANCELLED
+
+  // Pricing
+  pricingModel      String    // FIXED_PRICE, TIME_MATERIAL, STAFF_AUG, MANAGED_SERVICES
+  totalValue        Float?    // Total project value
+  currency          String    @default("USD")
+
+  // Delivery
+  deliveryModel     String?   // ONSITE, NEARSHORE, OFFSHORE, HYBRID
+  startDate         DateTime?
+  endDate           DateTime?
+  duration          Int?      // In weeks
+
+  // Platform Fees
+  platformFeePercent Float   @default(22.5) // Default 22.5%
+  platformFeeAmount Float?
+  platformFeePaid   Boolean  @default(false)
+
+  // Milestones (stored as JSON)
+  milestones        String?   @default("[]") // JSON array of milestones
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([consultingFirmId])
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// New model for Payment/Commission Tracking
+model Transaction {
+  id              String    @id @default(uuid())
+  type            String    // CONSULTING_PROJECT, TALENT_PLACEMENT, SUBSCRIPTION, FEATURED_LISTING
+  category        String    // PLATFORM_FEE, PAYOUT, SUBSCRIPTION_PAYMENT, REFUND
+
+  // Parties
+  payerId         String?   // User or Team paying
+  payeeId         String?   // User or Team receiving payment
+
+  // Amounts
+  amount          Float
+  currency        String    @default("USD")
+  platformFee     Float?    // Platform's commission/fee
+  payoutAmount    Float?    // Amount paid out (after platform fee)
+
+  // Context
+  engagementId    String?   // Link to engagement (if consulting project)
+  jobApplicationId String?  // Link to job application (if talent placement)
+
+  // Payment Details
+  paymentMethod   String?   // STRIPE, BANK_TRANSFER, CREDIT_CARD
+  stripePaymentId String?   // Stripe payment intent ID
+  status          String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
+
+  // Metadata
+  description     String?
+  metadata        String?   @default("{}") // JSON: Additional data
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime?
+
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([type])
+  @@index([category])
+  @@index([status])
+  @@index([engagementId])
+  @@index([jobApplicationId])
+  @@index([createdAt])
+}
+
+// New model for Subscription Plans
+model Subscription {
+  id          String    @id @default(uuid())
+  subscriberId String   // User or Team ID
+  subscriberType String // USER or TEAM
+
+  plan        String    // BASIC, PRO, ENTERPRISE
+  status      String    @default("ACTIVE") // ACTIVE, CANCELLED, EXPIRED, PAST_DUE
+
+  // Pricing
+  amount      Float
+  currency    String    @default("USD")
+  interval    String    @default("MONTH") // MONTH, YEAR
+
+  // Stripe
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+
+  // Dates
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAt             DateTime?
+  cancelledAt          DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([subscriberId])
+  @@index([subscriberType])
+  @@index([status])
+  @@index([plan])
 }

@@ -15,6 +15,10 @@ import collaborationRoutes from './routes/collaboration.routes.js';
 import portfolioContributorRoutes from './routes/portfolioContributor.routes.js';
 import jobRoutes from './routes/job.routes.js';
 import applicationRoutes from './routes/application.routes.js';
+import educationRoutes from './routes/education.routes.js';
+import engagementRoutes from './routes/engagement.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
+import subscriptionRoutes from './routes/subscription.routes.js';
 
 // Create Express app
 export const app = express();
@@ -114,6 +118,18 @@ app.use('/api/jobs', jobRoutes);
 
 // Application routes
 app.use('/api', applicationRoutes);
+
+// Education routes
+app.use('/api/education', educationRoutes);
+
+// Engagement routes
+app.use('/api/engagements', engagementRoutes);
+
+// Transaction routes
+app.use('/api/transactions', transactionRoutes);
+
+// Subscription routes
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Error handling
 app.use(notFoundHandler);

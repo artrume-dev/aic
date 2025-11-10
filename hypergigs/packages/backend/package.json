@@ -22,7 +22,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^6.19.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@types/nodemailer": "^7.0.3",
     "@types/passport": "^1.0.17",
@@ -53,7 +53,7 @@
     "@typescript-eslint/parser": "^6.13.2",
     "@vitest/coverage-v8": "^1.0.4",
     "eslint": "^8.55.0",
-    "prisma": "^5.7.1",
+    "prisma": "^6.19.0",
     "supertest": "^6.3.3",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
