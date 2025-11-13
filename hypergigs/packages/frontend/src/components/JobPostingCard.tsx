@@ -10,8 +10,8 @@ import {
   Building2,
   Star,
   Zap,
-  ChevronRight,
   Calendar,
+  MoveRight,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { JobPosting } from '@/types/job';
@@ -79,20 +79,20 @@ export default function JobPostingCard({
   return (
     <Card
       className={cn(
-        'bg-white rounded-lg border-0 border-b border-slate-200 hover:bg-slate-100/40 hover:border-slate-300 hover:rounded-lg transition-all duration-200 shadow-none relative'
+        'group bg-white rounded-none border-0 border-b border-slate-200 hover:bg-slate-100/40 transition-all duration-200 shadow-none relative'
       )}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-6 relative">
         <div className="space-y-4">
-          {/* Featured/Sponsored Badge - Top Left Corner */}
+          {/* Featured/Sponsored Badge - Top Right Corner */}
           {variant === 'featured' && (
-            <Badge className="absolute top-3 right-3 text-black border-0 bg-white shadow-none pointer-events-none">
-              <Star className="w-3 h-3 mr-1 fill-white" />
+            <Badge className="absolute top-6 right-6 text-yellow-700 border border-yellow-300 bg-yellow-50 shadow-sm pointer-events-none">
+              <Star className="w-3 h-3 mr-1 fill-yellow-500" />
               Featured
             </Badge>
           )}
           {variant === 'sponsored' && (
-            <Badge className="absolute top-3 right-3 bg-blue-500 text-white border-blue-600 pointer-events-none">
+            <Badge className="absolute top-6 right-6 bg-blue-500 text-white border-blue-600 shadow-sm pointer-events-none">
               <Zap className="w-3 h-3 mr-1" />
               Sponsored
             </Badge>
@@ -115,7 +115,7 @@ export default function JobPostingCard({
 
               {/* Job Title */}
               <h3
-                className="font-medium text-lg mb-4 truncate cursor-pointer hover:text-primary transition-colors"
+                className="font-medium text-xl mb-4 truncate cursor-pointer hover:text-primary transition-colors"
                 onClick={onView}
               >
                 {job.title}
@@ -191,7 +191,7 @@ export default function JobPostingCard({
 
           {/* Footer: Team Info with Creator Profile */}
           {(job.team || onView) && (
-            <div className="pt-4 border-0 flex items-center justify-between bg-slate-100/50 rounded-lg p-4">
+            <div className="pt-4 border-0 flex items-center justify-between">
               {job.team ? (
                 <div className="flex items-center gap-3 flex-wrap">
                   {/* Team Avatar and Name */}
@@ -200,7 +200,7 @@ export default function JobPostingCard({
                       <img
                         src={job.team.avatar}
                         alt={job.team.name}
-                        className="w-8 h-8 rounded-lg object-cover"
+                        className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -216,7 +216,7 @@ export default function JobPostingCard({
                   </div>
 
                   {/* Creator Profile (if available) */}
-                  {job.creator && (
+                  {/* {job.creator && (
                     <>
                       <span className="text-muted-foreground"> | </span>
                       <div className="flex items-center gap-2">
@@ -244,7 +244,7 @@ export default function JobPostingCard({
                         </Link>
                       </div>
                     </>
-                  )}
+                  )} */}
 
                   {/* Posted Date */}
                   <span className="text-muted-foreground"> | </span>
@@ -257,11 +257,13 @@ export default function JobPostingCard({
                 <div className="flex-1"></div>
               )}
 
+              {/* Arrow Indicator - Hidden by default, shown on hover */}
               {onView && (
-                <Button variant="outline" size="sm" className="border-0" onClick={onView}>
-                  View Details
-                   <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-12 h-12 flex items-center justify-center cursor-pointer" onClick={onView}>
+                    <MoveRight className="w-8 h-8 text-black" strokeWidth={1} />
+                  </div>
+                </div>
               )}
             </div>
           )}

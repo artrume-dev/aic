@@ -33,6 +33,7 @@ export interface UserDashboardStatistics {
   pendingInvitationsCount: number;
   portfolioCount: number;
   skillsCount: number;
+  jobPostingsCount: number;
   // Recommendation statistics
   pendingRequestsSent: number;
   pendingRequestsReceived: number;

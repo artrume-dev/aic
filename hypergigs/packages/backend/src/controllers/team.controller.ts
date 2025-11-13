@@ -83,7 +83,24 @@ export const updateTeam = async (req: Request, res: Response): Promise<void> => 
     }
 
     const { teamId } = req.params;
-    const { name, description, type, city, avatar } = req.body;
+    const {
+      name,
+      description,
+      type,
+      city,
+      avatar,
+      website,
+      // Consulting firm fields
+      isConsultingFirm,
+      partnerTier,
+      aiSpecializations,
+      techStack,
+      industries,
+      deliveryModels,
+      teamSize,
+      foundedYear,
+      minProjectBudget,
+    } = req.body;
 
     // Validate type if provided
     if (type && !['TEAM', 'COMPANY', 'ORGANIZATION', 'DEPARTMENT'].includes(type)) {
@@ -98,11 +115,22 @@ export const updateTeam = async (req: Request, res: Response): Promise<void> => 
     if (city !== undefined) updateData.city = city;
     if (avatar !== undefined) updateData.avatar = avatar;
 
+    // Consulting firm fields
+    if (isConsultingFirm !== undefined) updateData.isConsultingFirm = isConsultingFirm;
+    if (partnerTier !== undefined) updateData.partnerTier = partnerTier;
+    if (aiSpecializations !== undefined) updateData.aiSpecializations = aiSpecializations;
+    if (techStack !== undefined) updateData.techStack = techStack;
+    if (industries !== undefined) updateData.industries = industries;
+    if (deliveryModels !== undefined) updateData.deliveryModels = deliveryModels;
+    if (teamSize !== undefined) updateData.teamSize = teamSize;
+    if (foundedYear !== undefined) updateData.foundedYear = foundedYear;
+    if (minProjectBudget !== undefined) updateData.minProjectBudget = minProjectBudget;
+
     const team = await teamService.updateTeam(teamId, req.userId, updateData);
     res.status(200).json({ team });
   } catch (error) {
     logger.error('Update team error:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
         res.status(404).json({ error: error.message });

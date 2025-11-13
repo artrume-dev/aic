@@ -138,15 +138,15 @@ export default function DashboardHome() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <Avatar className="w-16 h-16 border-2 border-primary">
-              <AvatarImage src={user.avatar} alt={user.firstName} />
+              <AvatarImage src={user.avatar} alt={user.firstName || user.username} />
               <AvatarFallback className="text-lg font-bold">
-                {user.firstName[0]}
-                {user.lastName[0]}
+                {user.firstName?.[0] || user.username?.[0] || 'U'}
+                {user.lastName?.[0] || ''}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-4xl font-bold">
-                Welcome back, {user.firstName}!
+                Welcome back, {user.firstName || user.username}!
               </h1>
               <p className="text-muted-foreground">
                 Here's what's happening with your account today.

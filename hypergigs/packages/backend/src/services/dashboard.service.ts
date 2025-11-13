@@ -12,7 +12,7 @@ export class DashboardService {
    */
   async getUserDashboard(userId: string) {
     // Fetch user with related data in parallel for better performance
-    const [user, statistics, recentTeams, recentInvitations, recentMessages, recommendationStats] = await Promise.all([
+    const [user, statistics, recentTeams, recentInvitations, recentMessages, recommendationStats, jobPostingsCount] = await Promise.all([
       // Get basic user info
       prisma.user.findUnique({
         where: { id: userId },
@@ -222,6 +222,13 @@ export class DashboardService {
         acceptedRecommendations: acceptedReceived,
         givenRecommendations: givenSent,
       })),
+
+      // Count job postings created by user (across all owned teams)
+      prisma.jobPosting.count({
+        where: {
+          createdBy: userId,
+        },
+      }),
     ]);
 
     if (!user) {
@@ -239,6 +246,7 @@ export class DashboardService {
       pendingInvitationsCount: statistics?._count.receivedInvitations || 0,
       portfolioCount: statistics?._count.portfolios || 0,
       skillsCount: statistics?._count.skills || 0,
+      jobPostingsCount: jobPostingsCount || 0,
       // Recommendation statistics
       pendingRequestsSent: recommendationStats.pendingRequestsSent,
       pendingRequestsReceived: recommendationStats.pendingRequestsReceived,

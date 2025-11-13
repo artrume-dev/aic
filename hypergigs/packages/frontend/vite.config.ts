@@ -4,11 +4,28 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // Disable runtime evaluation for better CSP compliance
+      jsxRuntime: 'automatic',
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    // Disable minification that uses eval for better CSP compliance
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // Don't use eval in production
+        drop_console: false,
+      },
+    },
+    // Generate source maps without eval for debugging
+    sourcemap: true,
   },
   server: {
     proxy: {

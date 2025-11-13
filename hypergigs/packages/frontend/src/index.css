@@ -132,3 +132,9 @@ a {
 .ProseMirror a:hover {
   opacity: 0.8;
 }
+
+.pattern-background {
+    background-image: repeating-linear-gradient(315deg, #1d4ed81A 0, #1d4ed81A 1px, transparent 0, transparent 50%);
+    background-size: 10px 10px;
+    background-attachment: fixed;
+}

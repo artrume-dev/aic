@@ -30,6 +30,7 @@ export default function CreateTeamPage() {
     website: '',
     city: '',
     avatar: '',
+    isConsultingFirm: false,
   });
 
   // Avatar upload state
@@ -189,6 +190,26 @@ export default function CreateTeamPage() {
                       <SelectItem value="ORGANIZATION">Organization</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* AI Consulting Firm Toggle */}
+                <div className="flex items-center space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="isConsultingFirm"
+                    checked={formData.isConsultingFirm}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isConsultingFirm: e.target.checked }))}
+                    disabled={isLoading || isSubmitted}
+                    className="w-4 h-4 text-primary focus:ring-2 focus:ring-primary border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="isConsultingFirm" className="font-medium cursor-pointer">
+                      Register as AI Consulting Firm
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Join our marketplace to showcase your AI/ML consulting services and get discovered by clients.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Description */}

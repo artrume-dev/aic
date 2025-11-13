@@ -19,6 +19,8 @@ import RecommendationsPage from './pages/RecommendationsPage';
 import JobBoardPage from './pages/JobBoardPage';
 import JobDetailPage from './pages/JobDetailPage';
 import TeamJobsPage from './pages/TeamJobsPage';
+import DashboardJobsPage from './pages/DashboardJobsPage';
+import TeamSettingsPage from './pages/TeamSettingsPage';
 import JoinTeamInvitationPage from './pages/JoinTeamInvitationPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Footer from './components/Footer';
@@ -36,6 +38,11 @@ function App() {
             <Route path="/teams/:teamSlug/jobs" element={<TeamJobsPage />} />
             <Route path="/teams/:identifier" element={<TeamDetailPage />} />
             <Route path="/freelancers" element={<FreelancersPage />} />
+
+            {/* Protected team routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/teams/:identifier/settings" element={<TeamSettingsPage />} />
+            </Route>
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/jobs" element={<JobBoardPage />} />
             <Route path="/jobs/:jobId" element={<JobDetailPage />} />
@@ -50,11 +57,11 @@ function App() {
               {/* Dashboard with nested routes */}
               <Route path="/dashboard" element={<DashboardLayout><DashboardHome /></DashboardLayout>} />
               <Route path="/dashboard/teams" element={<DashboardLayout><MyTeamsPage /></DashboardLayout>} />
+              <Route path="/dashboard/jobs" element={<DashboardJobsPage />} />
               <Route path="/dashboard/invitations" element={<DashboardLayout><InvitationsPage /></DashboardLayout>} />
               <Route path="/dashboard/recommendations" element={<DashboardLayout><RecommendationsPage /></DashboardLayout>} />
               <Route path="/dashboard/community" element={<DashboardLayout><FreelancersPage /></DashboardLayout>} />
               <Route path="/dashboard/profile" element={<DashboardLayout><ProfilePage /></DashboardLayout>} />
-              <Route path="/dashboard/projects" element={<DashboardLayout><ProjectsPage /></DashboardLayout>} />
               <Route path="/dashboard/messages" element={<DashboardLayout><div className="text-center py-12"><h2 className="text-2xl font-bold">Messages</h2><p className="text-muted-foreground mt-2">Coming soon...</p></div></DashboardLayout>} />
 
               {/* Legacy routes */}

@@ -225,10 +225,10 @@ export default function TeamJobsPage() {
                 <img
                   src={team.avatar}
                   alt={team.name}
-                  className="w-16 h-16 rounded-lg object-cover border border-border"
+                  className="w-16 h-16 rounded-full object-cover border border-border"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center border border-border">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border border-border">
                   <Building2 className="w-8 h-8 text-muted-foreground" />
                 </div>
               )}

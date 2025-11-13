@@ -1,4 +1,4 @@
-export type TeamType = 'COMPANY' | 'ORGANIZATION' | 'TEAM' | 'DEPARTMENT';
+export type TeamType = 'COMPANY' | 'ORGANIZATION' | 'TEAM';
 export type SubTeamCategory =
   | 'ENGINEERING'
   | 'MARKETING'
@@ -12,6 +12,8 @@ export type SubTeamCategory =
   | 'SUPPORT'
   | 'OTHER';
 export type TeamRole = 'OWNER' | 'ADMIN' | 'MEMBER';
+export type PartnerTier = 'EMERGING' | 'ESTABLISHED' | 'PREMIER' | 'ENTERPRISE';
+export type DeliveryModel = 'FIXED_PRICE' | 'TIME_AND_MATERIALS' | 'RETAINER' | 'OUTCOME_BASED';
 
 export interface Team {
   id: string;
@@ -31,6 +33,24 @@ export interface Team {
   projectCount: number;
   createdAt: string;
   updatedAt: string;
+
+  // Consulting firm specific fields
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  deliveryModels?: DeliveryModel[];
+  teamSize?: number;
+  foundedYear?: number;
+  minProjectBudget?: number;
+  avgProjectDuration?: number;
+  successRate?: number;
+  clientSatisfactionScore?: number;
+  isVerified?: boolean;
+  verificationStatus?: string;
+  verifiedAt?: string;
+
   _count?: {
     members: number;
     projects: number;
@@ -68,6 +88,17 @@ export interface CreateTeamRequest {
   website?: string;
   city?: string;
   parentTeamId?: string;
+
+  // Consulting firm fields
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  deliveryModels?: DeliveryModel[];
+  teamSize?: number;
+  foundedYear?: number;
+  minProjectBudget?: number;
 }
 
 export interface UpdateTeamRequest {
@@ -78,6 +109,18 @@ export interface UpdateTeamRequest {
   avatar?: string;
   website?: string;
   city?: string;
+
+  // Consulting firm fields
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  deliveryModels?: DeliveryModel[];
+  teamSize?: number;
+  foundedYear?: number;
+  minProjectBudget?: number;
+  avgProjectDuration?: number;
 }
 
 export interface SearchTeamsFilters {
@@ -86,6 +129,14 @@ export interface SearchTeamsFilters {
   search?: string;
   page?: number;
   limit?: number;
+
+  // Consulting firm filters
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  isVerified?: boolean;
 }
 
 export interface PaginatedTeams {

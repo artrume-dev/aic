@@ -34,6 +34,11 @@ const navItems: NavItem[] = [
     label: 'Teams',
   },
   {
+    to: '/dashboard/jobs',
+    icon: Briefcase,
+    label: 'Jobs',
+  },
+  {
     to: '/dashboard/invitations',
     icon: Mail,
     label: 'Invitations',
@@ -52,11 +57,6 @@ const navItems: NavItem[] = [
     to: '/dashboard/profile',
     icon: User,
     label: 'Profile',
-  },
-  {
-    to: '/dashboard/projects',
-    icon: Briefcase,
-    label: 'Projects',
   },
   {
     to: '/dashboard/messages',

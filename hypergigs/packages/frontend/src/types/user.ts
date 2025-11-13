@@ -1,4 +1,5 @@
 import type { User, Currency } from './auth';
+import type { Education } from './education';
 
 export interface Skill {
   id: string;
@@ -112,6 +113,7 @@ export interface UserProfile extends User {
   skills?: UserSkill[];
   portfolios?: PortfolioItem[];
   workExperiences?: WorkExperience[];
+  education?: Education[];
 }
 
 export interface UpdateProfileRequest {
@@ -123,10 +125,19 @@ export interface UpdateProfileRequest {
   location?: string;
   country?: string;
   hourlyRate?: number;
+  hourlyRateMax?: number;
   currency?: Currency;
   available?: boolean;
   nextAvailability?: string;
   avatar?: string;
+
+  // AI Talent fields
+  isAITalent?: boolean;
+  talentRole?: string;
+  talentTier?: string;
+  employmentPreference?: string;
+  timezone?: string;
+  availabilityStatus?: string;
 }
 
 export interface AddSkillRequest {

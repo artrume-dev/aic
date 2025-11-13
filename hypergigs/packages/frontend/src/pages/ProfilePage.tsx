@@ -14,6 +14,7 @@ import type {
   CreateExperienceRequest,
   Recommendation
 } from '@/types/user';
+import type { Education, CreateEducationRequest } from '@/types/education';
 import Navigation from '@/components/Navigation';
 import ProjectDrawer from '@/components/ProjectDrawer';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -22,14 +23,18 @@ import EnhancedRecommendationDialog from '@/components/EnhancedRecommendationDia
 import PortfolioRatingBox from '@/components/PortfolioRatingBox';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import ContributorBadge from '@/components/ContributorBadge';
+import EducationSection from '@/components/EducationSection';
 import { CountrySelect } from '@/components/ui/country-select';
 import { CitySelect } from '@/components/ui/city-select';
+import { VerificationBadge } from '@/components/ui/VerificationBadge';
+import { TalentTierBadge } from '@/components/ui/TalentTierBadge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, DollarSign, Briefcase, Calendar, ExternalLink, Plus, X, Edit2, Check, Upload, Image as ImageIcon, Sparkles, Heart } from 'lucide-react';
+import { MapPin, DollarSign, Briefcase, Calendar, ExternalLink, Plus, X, Edit2, Check, Upload, Image as ImageIcon, Sparkles, Heart, Award, TrendingUp } from 'lucide-react';
 import { searchSkills } from '@/data/skills';
 import { stripHtmlTags } from '@/lib/utils';
 import { getCurrencyOptions, convertCurrency, formatCurrency, CURRENCY_SYMBOLS } from '@/lib/currency';
 import type { Currency } from '@/types/auth';
+import { AI_TALENT_ROLES, TALENT_TIERS, EMPLOYMENT_PREFERENCES, TIMEZONES, AVAILABILITY_STATUS, type TalentTier } from '@/constants/aiTalent';
 
 // Helper function to render text with line breaks and clickable links
 const formatRichText = (text: string) => {
@@ -158,6 +163,9 @@ export default function ProfilePage() {
     present: false
   });
 
+  // Education state
+  const [education, setEducation] = useState<Education[]>([]);
+
   const isOwnProfile = !username || username === currentUser?.username;
 
   useEffect(() => {
@@ -203,6 +211,7 @@ export default function ProfilePage() {
       setProfile(data);
       setSkills(data.skills || []);
       setExperience(data.workExperiences || []);
+      setEducation(data.education || []);
 
       // Fetch all recommendations for this user
       let allRecs: Recommendation[] = [];
@@ -262,9 +271,17 @@ export default function ProfilePage() {
         location: data.location || '',
         country: data.country || '',
         hourlyRate: data.hourlyRate || 0,
+        hourlyRateMax: data.hourlyRateMax,
         currency: data.currency || 'USD',
         available: data.available,
         nextAvailability: data.nextAvailability || '',
+        // AI Talent fields
+        isAITalent: data.isAITalent || false,
+        talentRole: data.talentRole || '',
+        talentTier: data.talentTier || '',
+        employmentPreference: data.employmentPreference || '',
+        timezone: data.timezone || '',
+        availabilityStatus: data.availabilityStatus || 'AVAILABLE',
       });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load profile');
@@ -710,6 +727,37 @@ export default function ProfilePage() {
     }
   };
 
+  // Education handlers
+  const handleAddEducation = async (data: CreateEducationRequest) => {
+    try {
+      const edu = await userService.addEducation(data);
+      setEducation([...education, edu]);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to add education');
+      throw err;
+    }
+  };
+
+  const handleDeleteEducation = async (educationId: string) => {
+    try {
+      await userService.deleteEducation(educationId);
+      setEducation(education.filter(e => e.id !== educationId));
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete education');
+      throw err;
+    }
+  };
+
+  const handleUpdateEducation = async (educationId: string, data: CreateEducationRequest) => {
+    try {
+      const updated = await userService.updateEducation(educationId, data);
+      setEducation(education.map(e => e.id === educationId ? updated : e));
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update education');
+      throw err;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -764,6 +812,24 @@ export default function ProfilePage() {
                     {profile.firstName} {profile.lastName}
                   </h1>
                   <VerifiedBadge show={profile.hasVerifiedBadge} size="lg" />
+                  {/* AI Talent Badges */}
+                  {profile.isAITalent && (
+                    <div className="flex items-center gap-2">
+                      {profile.verificationStatus && profile.verificationStatus !== 'UNVERIFIED' && (
+                        <VerificationBadge
+                          status={profile.verificationStatus}
+                          size="sm"
+                        />
+                      )}
+                      {profile.talentTier && (
+                        <TalentTierBadge
+                          tier={profile.talentTier as TalentTier}
+                          size="sm"
+                          verified={profile.verificationStatus === 'VERIFIED' || profile.verificationStatus === 'VERIFIED_EXPERT'}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   {isOwnProfile && (
@@ -775,7 +841,7 @@ export default function ProfilePage() {
                       <span className="text-sm font-medium">Edit Profile</span>
                     </button>
                   )}
-           
+
                 </div>
               </div>
 
@@ -908,6 +974,102 @@ export default function ProfilePage() {
               </div>
 
 
+
+  {/* AI Talent Profile Section */}
+          {profile.isAITalent && (
+            <div className="mb-24 pt-8">
+              <h2 className="text-3xl font-bold mb-8">AI Talent Profile</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Role & Tier */}
+                {profile.talentRole && (
+                  <div className="p-6 bg-white rounded-2xl border border-border">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Talent Role
+                    </p>
+                    <p className="text-lg font-bold">{profile.talentRole}</p>
+                  </div>
+                )}
+
+                {/* Employment Preference */}
+                {profile.employmentPreference && (
+                  <div className="p-6 bg-white rounded-2xl border border-border">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Employment Type
+                    </p>
+                    <p className="text-lg font-bold">
+                      {EMPLOYMENT_PREFERENCES.find(p => p.value === profile.employmentPreference)?.label || profile.employmentPreference}
+                    </p>
+                  </div>
+                )}
+
+                {/* Timezone */}
+                {profile.timezone && (
+                  <div className="p-6 bg-white rounded-2xl border border-border">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Timezone
+                    </p>
+                    <p className="text-lg font-bold">
+                      {TIMEZONES.find(tz => tz.value === profile.timezone)?.label || profile.timezone}
+                    </p>
+                  </div>
+                )}
+
+                {/* Availability Status */}
+                {profile.availabilityStatus && (
+                  <div className="p-6 bg-white rounded-2xl border border-border">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Status
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        profile.availabilityStatus === 'AVAILABLE' ? 'bg-green-500' :
+                        profile.availabilityStatus === 'BUSY' ? 'bg-yellow-500' : 'bg-gray-400'
+                      }`} />
+                      <p className="text-lg font-bold">
+                        {AVAILABILITY_STATUS.find(s => s.value === profile.availabilityStatus)?.label || profile.availabilityStatus}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Verification Scores */}
+              {(profile.verificationStatus === 'VERIFIED' || profile.verificationStatus === 'VERIFIED_EXPERT') && (
+                <div className="mt-6 p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Award className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-bold text-blue-900">AI Verification Scores</h3>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {profile.aiSkillScore !== undefined && profile.aiSkillScore !== null && (
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-blue-900">{profile.aiSkillScore}</p>
+                        <p className="text-xs text-blue-700 mt-1">AI Skills</p>
+                      </div>
+                    )}
+                    {profile.portfolioScore !== undefined && profile.portfolioScore !== null && (
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-purple-900">{profile.portfolioScore}</p>
+                        <p className="text-xs text-purple-700 mt-1">Portfolio</p>
+                      </div>
+                    )}
+                    {profile.experienceScore !== undefined && profile.experienceScore !== null && (
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-indigo-900">{profile.experienceScore}</p>
+                        <p className="text-xs text-indigo-700 mt-1">Experience</p>
+                      </div>
+                    )}
+                    {profile.overallScore !== undefined && profile.overallScore !== null && (
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-blue-900">{profile.overallScore}</p>
+                        <p className="text-xs text-blue-700 mt-1">Overall</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
   {/* Skills Section */}
           <div className="mb-24 pt-8">
@@ -1275,6 +1437,128 @@ export default function ProfilePage() {
                     />
                   </div>
                 )}
+
+                {/* AI Talent Marketplace Section */}
+                <div className="border-t pt-6 mt-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Sparkles className="w-6 h-6 text-blue-600" />
+                    <h3 className="text-xl font-bold">AI Talent Marketplace</h3>
+                  </div>
+
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <label className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.isAITalent || false}
+                        onChange={(e) => setFormData(prev => ({ ...prev, isAITalent: e.target.checked }))}
+                        className="mt-1 rounded border-border"
+                      />
+                      <div>
+                        <span className="text-sm font-medium block">Register as AI Talent</span>
+                        <span className="text-xs text-muted-foreground">
+                          Join our AI talent marketplace to get discovered by companies looking for ML engineers, data scientists, and AI specialists
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+
+                  {formData.isAITalent && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Talent Role *
+                          </label>
+                          <select
+                            value={formData.talentRole || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, talentRole: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="">Select role</option>
+                            {AI_TALENT_ROLES.map((role) => (
+                              <option key={role} value={role}>
+                                {role}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Experience Level *
+                          </label>
+                          <select
+                            value={formData.talentTier || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, talentTier: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="">Select level</option>
+                            {TALENT_TIERS.map((tier) => (
+                              <option key={tier.value} value={tier.value}>
+                                {tier.label} - {tier.description}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Employment Preference
+                          </label>
+                          <select
+                            value={formData.employmentPreference || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, employmentPreference: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="">Select preference</option>
+                            {EMPLOYMENT_PREFERENCES.map((pref) => (
+                              <option key={pref.value} value={pref.value}>
+                                {pref.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Timezone
+                          </label>
+                          <select
+                            value={formData.timezone || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, timezone: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="">Select timezone</option>
+                            {TIMEZONES.map((tz) => (
+                              <option key={tz.value} value={tz.value}>
+                                {tz.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Availability Status
+                        </label>
+                        <select
+                          value={formData.availabilityStatus || 'AVAILABLE'}
+                          onChange={(e) => setFormData(prev => ({ ...prev, availabilityStatus: e.target.value }))}
+                          className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          {AVAILABILITY_STATUS.map((status) => (
+                            <option key={status.value} value={status.value}>
+                              {status.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                         <div className="flex gap-3 pt-4">
                           <button
@@ -1913,6 +2197,15 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Education Section */}
+          <EducationSection
+            education={education}
+            isOwnProfile={isOwnProfile}
+            onAdd={handleAddEducation}
+            onDelete={handleDeleteEducation}
+            onUpdate={handleUpdateEducation}
+          />
 
           {/* Recommendations Section - Shows all accepted recommendations */}
           {profile && allRecommendations.length > 0 && (

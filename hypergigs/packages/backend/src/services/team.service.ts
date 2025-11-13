@@ -6,7 +6,7 @@ import {
   generateMatchReason,
 } from '../utils/keywordExtractor.js';
 
-export type TeamType = 'COMPANY' | 'ORGANIZATION' | 'TEAM' | 'DEPARTMENT';
+export type TeamType = 'COMPANY' | 'ORGANIZATION' | 'TEAM';
 export type SubTeamCategory =
   | 'ENGINEERING'
   | 'MARKETING'
@@ -20,6 +20,8 @@ export type SubTeamCategory =
   | 'SUPPORT'
   | 'OTHER';
 export type MemberRole = 'OWNER' | 'ADMIN' | 'MEMBER';
+export type PartnerTier = 'EMERGING' | 'ESTABLISHED' | 'PREMIER' | 'ENTERPRISE';
+export type DeliveryModel = 'FIXED_PRICE' | 'TIME_AND_MATERIALS' | 'RETAINER' | 'OUTCOME_BASED';
 
 export interface CreateTeamData {
   name: string;
@@ -29,6 +31,17 @@ export interface CreateTeamData {
   city?: string;
   avatar?: string;
   parentTeamId?: string;
+
+  // Consulting firm fields
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  deliveryModels?: DeliveryModel[];
+  teamSize?: number;
+  foundedYear?: number;
+  minProjectBudget?: number;
 }
 
 export interface UpdateTeamData {
@@ -37,6 +50,17 @@ export interface UpdateTeamData {
   type?: TeamType;
   city?: string;
   avatar?: string;
+
+  // Consulting firm fields
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  deliveryModels?: DeliveryModel[];
+  teamSize?: number;
+  foundedYear?: number;
+  minProjectBudget?: number;
 }
 
 export interface TeamSearchFilters {
@@ -45,9 +69,32 @@ export interface TeamSearchFilters {
   search?: string;
   page?: number;
   limit?: number;
+
+  // Consulting firm filters
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  isVerified?: boolean;
 }
 
 export class TeamService {
+  /**
+   * Parse JSON fields in team object
+   */
+  private parseTeamJsonFields(team: any) {
+    if (!team) return team;
+
+    return {
+      ...team,
+      aiSpecializations: team.aiSpecializations ? JSON.parse(team.aiSpecializations) : [],
+      techStack: team.techStack ? JSON.parse(team.techStack) : [],
+      industries: team.industries ? JSON.parse(team.industries) : [],
+      deliveryModels: team.deliveryModels ? JSON.parse(team.deliveryModels) : [],
+    };
+  }
+
   /**
    * Create a new team
    */
@@ -114,6 +161,17 @@ export class TeamService {
           ownerId,
           parentTeamId: data.parentTeamId,
           isMainTeam: !data.parentTeamId, // If has parent, it's a sub-team
+
+          // Consulting firm fields
+          isConsultingFirm: data.isConsultingFirm || false,
+          partnerTier: data.partnerTier,
+          aiSpecializations: data.aiSpecializations ? JSON.stringify(data.aiSpecializations) : '[]',
+          techStack: data.techStack ? JSON.stringify(data.techStack) : '[]',
+          industries: data.industries ? JSON.stringify(data.industries) : '[]',
+          deliveryModels: data.deliveryModels ? JSON.stringify(data.deliveryModels) : '[]',
+          teamSize: data.teamSize,
+          foundedYear: data.foundedYear,
+          minProjectBudget: data.minProjectBudget,
         },
         include: {
           owner: {
@@ -189,7 +247,7 @@ export class TeamService {
       },
     });
 
-    return team;
+    return this.parseTeamJsonFields(team);
   }
 
   /**
@@ -231,7 +289,7 @@ export class TeamService {
       },
     });
 
-    return team;
+    return this.parseTeamJsonFields(team);
   }
 
   /**
@@ -255,7 +313,7 @@ export class TeamService {
     let slug = team.slug;
     if (data.name && data.name !== team.name) {
       slug = this.generateSlug(data.name);
-      
+
       // Check if new slug exists
       const existingSlug = await prisma.team.findUnique({
         where: { slug },
@@ -266,12 +324,26 @@ export class TeamService {
       }
     }
 
+    // Prepare update data with JSON stringification for array fields
+    const updateData: any = { ...data, slug };
+
+    // JSON stringify array fields if they exist
+    if (data.aiSpecializations !== undefined) {
+      updateData.aiSpecializations = JSON.stringify(data.aiSpecializations);
+    }
+    if (data.techStack !== undefined) {
+      updateData.techStack = JSON.stringify(data.techStack);
+    }
+    if (data.industries !== undefined) {
+      updateData.industries = JSON.stringify(data.industries);
+    }
+    if (data.deliveryModels !== undefined) {
+      updateData.deliveryModels = JSON.stringify(data.deliveryModels);
+    }
+
     const updatedTeam = await prisma.team.update({
       where: { id: teamId },
-      data: {
-        ...data,
-        slug,
-      },
+      data: updateData,
       include: {
         owner: {
           select: {
@@ -292,7 +364,7 @@ export class TeamService {
     });
 
     logger.info(`Team updated: ${updatedTeam.name}`);
-    return updatedTeam;
+    return this.parseTeamJsonFields(updatedTeam);
   }
 
   /**
@@ -368,11 +440,7 @@ export class TeamService {
             select: {
               members: true,
               projects: true,
-              jobPostings: {
-                where: {
-                  status: 'ACTIVE',
-                },
-              },
+              jobPostings: true,
             },
           },
         },
@@ -384,7 +452,7 @@ export class TeamService {
     ]);
 
     return {
-      teams,
+      teams: teams.map(team => this.parseTeamJsonFields(team)),
       pagination: {
         page,
         limit,
@@ -432,11 +500,14 @@ export class TeamService {
       },
     });
 
-    return teamMembers.map((tm: any) => ({
-      ...tm.team,
-      role: tm.role,  // Frontend expects 'role' not 'myRole'
-      joinedAt: tm.joinedAt,
-    }));
+    return teamMembers.map((tm: any) => {
+      const parsedTeam = this.parseTeamJsonFields(tm.team);
+      return {
+        ...parsedTeam,
+        role: tm.role,  // Frontend expects 'role' not 'myRole'
+        joinedAt: tm.joinedAt,
+      };
+    });
   }
 
   /**
@@ -780,8 +851,37 @@ export class TeamService {
       subTeamCategory: team.subTeamCategory || undefined,
     });
 
+    // For consulting firms, also include AI specializations, tech stack, and industries
+    if (team.isConsultingFirm) {
+      try {
+        if (team.aiSpecializations) {
+          const specs = JSON.parse(team.aiSpecializations as string) as string[];
+          specs.forEach(spec => {
+            const specWords = spec.toLowerCase().split(/\s+/);
+            specWords.forEach(word => teamKeywords.push(word));
+          });
+        }
+        if (team.techStack) {
+          const tech = JSON.parse(team.techStack as string) as string[];
+          tech.forEach(t => {
+            const techWords = t.toLowerCase().split(/\s+/);
+            techWords.forEach(word => teamKeywords.push(word));
+          });
+        }
+        if (team.industries) {
+          const industries = JSON.parse(team.industries as string) as string[];
+          industries.forEach(ind => {
+            const indWords = ind.toLowerCase().split(/\s+/);
+            indWords.forEach(word => teamKeywords.push(word));
+          });
+        }
+      } catch (e) {
+        logger.warn('Failed to parse consulting firm keywords:', e);
+      }
+    }
+
     logger.info(
-      `Team "${team.name}" - Type: ${team.type}, SubCategory: ${team.subTeamCategory || 'none'}`
+      `Team "${team.name}" - Type: ${team.type}, SubCategory: ${team.subTeamCategory || 'none'}, isConsultingFirm: ${team.isConsultingFirm || false}`
     );
     logger.info(`Extracted keywords: [${teamKeywords.join(', ')}]`);
 
@@ -862,7 +962,7 @@ export class TeamService {
           matchReason,
         };
       })
-      .filter((item) => item.score >= 10) // Only show users with meaningful matches (min 10 points)
+      .filter((item) => item.score >= 3) // Lower threshold to show more matches (min 3 points - location match)
       .sort((a, b) => b.score - a.score) // Sort by score descending
       .slice(0, limit); // Limit results
 
@@ -888,6 +988,382 @@ export class TeamService {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  }
+
+  // ============================================
+  // AI CONSULTING FIRM FEATURES
+  // ============================================
+
+  /**
+   * Update consulting firm profile
+   */
+  async updateConsultingFirmProfile(teamId: string, data: {
+    isConsultingFirm?: boolean;
+    partnerTier?: string;
+    aiSpecializations?: string[];
+    techStack?: string[];
+    industries?: string[];
+    deliveryModels?: string[];
+    teamSize?: number;
+    foundedYear?: number;
+    responseRate?: number;
+    officeLocations?: string[];
+    certifications?: string[];
+    caseStudyUrls?: string[];
+    clientTestimonials?: string[];
+    pricingModel?: string;
+    minProjectBudget?: number;
+    avgProjectDuration?: number;
+  }) {
+    const team = await prisma.team.update({
+      where: { id: teamId },
+      data: {
+        isConsultingFirm: data.isConsultingFirm,
+        partnerTier: data.partnerTier,
+        aiSpecializations: data.aiSpecializations ? JSON.stringify(data.aiSpecializations) : undefined,
+        techStack: data.techStack ? JSON.stringify(data.techStack) : undefined,
+        industries: data.industries ? JSON.stringify(data.industries) : undefined,
+        deliveryModels: data.deliveryModels ? JSON.stringify(data.deliveryModels) : undefined,
+        teamSize: data.teamSize,
+        foundedYear: data.foundedYear,
+        responseRate: data.responseRate,
+        officeLocations: data.officeLocations ? JSON.stringify(data.officeLocations) : undefined,
+        certifications: data.certifications ? JSON.stringify(data.certifications) : undefined,
+        caseStudyUrls: data.caseStudyUrls ? JSON.stringify(data.caseStudyUrls) : undefined,
+        clientTestimonials: data.clientTestimonials ? JSON.stringify(data.clientTestimonials) : undefined,
+        pricingModel: data.pricingModel,
+        minProjectBudget: data.minProjectBudget,
+        avgProjectDuration: data.avgProjectDuration,
+      },
+      select: {
+        id: true,
+        name: true,
+        isConsultingFirm: true,
+        partnerTier: true,
+        aiSpecializations: true,
+        techStack: true,
+        industries: true,
+        deliveryModels: true,
+        teamSize: true,
+        foundedYear: true,
+        projectsCompleted: true,
+        avgRating: true,
+        verificationStatus: true,
+      },
+    });
+
+    logger.info(`Consulting firm profile updated: ${teamId}`);
+
+    return {
+      ...team,
+      aiSpecializations: team.aiSpecializations ? JSON.parse(team.aiSpecializations) : [],
+      techStack: team.techStack ? JSON.parse(team.techStack) : [],
+      industries: team.industries ? JSON.parse(team.industries) : [],
+      deliveryModels: team.deliveryModels ? JSON.parse(team.deliveryModels) : [],
+    };
+  }
+
+  /**
+   * Search consulting firms with advanced filters
+   */
+  async searchConsultingFirms(filters: {
+    partnerTier?: string;
+    aiSpecializations?: string[];
+    techStack?: string[];
+    industries?: string[];
+    deliveryModels?: string[];
+    verificationStatus?: string;
+    minTeamSize?: number;
+    maxTeamSize?: number;
+    minProjectBudget?: number;
+    location?: string;
+    minRating?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    const where: any = {
+      isConsultingFirm: true,
+    };
+
+    if (filters.partnerTier) {
+      where.partnerTier = filters.partnerTier;
+    }
+
+    if (filters.verificationStatus) {
+      where.verificationStatus = filters.verificationStatus;
+    }
+
+    if (filters.minTeamSize !== undefined || filters.maxTeamSize !== undefined) {
+      where.teamSize = {};
+      if (filters.minTeamSize !== undefined) {
+        where.teamSize.gte = filters.minTeamSize;
+      }
+      if (filters.maxTeamSize !== undefined) {
+        where.teamSize.lte = filters.maxTeamSize;
+      }
+    }
+
+    if (filters.minProjectBudget !== undefined) {
+      where.minProjectBudget = {
+        lte: filters.minProjectBudget,
+      };
+    }
+
+    if (filters.minRating !== undefined) {
+      where.avgRating = {
+        gte: filters.minRating,
+      };
+    }
+
+    if (filters.location) {
+      where.city = { contains: filters.location };
+    }
+
+    // Note: For JSON array filtering (specializations, techStack, etc.),
+    // we'll need to do post-query filtering in JavaScript since SQLite
+    // doesn't support JSON queries efficiently
+
+    const firms = await prisma.team.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        avatar: true,
+        city: true,
+        isConsultingFirm: true,
+        partnerTier: true,
+        verificationStatus: true,
+        verificationDate: true,
+        aiSpecializations: true,
+        techStack: true,
+        industries: true,
+        deliveryModels: true,
+        teamSize: true,
+        foundedYear: true,
+        projectsCompleted: true,
+        avgRating: true,
+        responseRate: true,
+        officeLocations: true,
+        certifications: true,
+        pricingModel: true,
+        minProjectBudget: true,
+        avgProjectDuration: true,
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
+      orderBy: [
+        { verificationStatus: 'desc' },
+        { avgRating: 'desc' },
+        { projectsCompleted: 'desc' },
+      ],
+      take: filters.limit || 20,
+      skip: filters.offset || 0,
+    });
+
+    // Parse JSON fields and apply client-side filtering
+    let filteredFirms = firms.map(firm => ({
+      ...firm,
+      aiSpecializations: firm.aiSpecializations ? JSON.parse(firm.aiSpecializations) : [],
+      techStack: firm.techStack ? JSON.parse(firm.techStack) : [],
+      industries: firm.industries ? JSON.parse(firm.industries) : [],
+      deliveryModels: firm.deliveryModels ? JSON.parse(firm.deliveryModels) : [],
+      officeLocations: firm.officeLocations ? JSON.parse(firm.officeLocations) : [],
+      certifications: firm.certifications ? JSON.parse(firm.certifications) : [],
+    }));
+
+    // Apply client-side filtering for JSON array fields
+    if (filters.aiSpecializations && filters.aiSpecializations.length > 0) {
+      filteredFirms = filteredFirms.filter(firm =>
+        filters.aiSpecializations!.some(spec => firm.aiSpecializations.includes(spec))
+      );
+    }
+
+    if (filters.techStack && filters.techStack.length > 0) {
+      filteredFirms = filteredFirms.filter(firm =>
+        filters.techStack!.some(tech => firm.techStack.includes(tech))
+      );
+    }
+
+    if (filters.industries && filters.industries.length > 0) {
+      filteredFirms = filteredFirms.filter(firm =>
+        filters.industries!.some(industry => firm.industries.includes(industry))
+      );
+    }
+
+    if (filters.deliveryModels && filters.deliveryModels.length > 0) {
+      filteredFirms = filteredFirms.filter(firm =>
+        filters.deliveryModels!.some(model => firm.deliveryModels.includes(model))
+      );
+    }
+
+    logger.info(`Found ${filteredFirms.length} consulting firms matching filters`);
+    return filteredFirms;
+  }
+
+  /**
+   * Update consulting firm verification status (admin only)
+   */
+  async updateFirmVerificationStatus(teamId: string, data: {
+    verificationStatus: string;
+    verificationData?: any;
+    verifiedBy?: string;
+  }) {
+    const team = await prisma.team.update({
+      where: { id: teamId },
+      data: {
+        verificationStatus: data.verificationStatus,
+        verificationData: data.verificationData ? JSON.stringify(data.verificationData) : undefined,
+        verificationDate: new Date(),
+        verifiedBy: data.verifiedBy,
+      },
+      select: {
+        id: true,
+        name: true,
+        verificationStatus: true,
+        verificationDate: true,
+        verifiedBy: true,
+      },
+    });
+
+    logger.info(`Consulting firm verification updated: ${teamId} - ${data.verificationStatus}`);
+    return team;
+  }
+
+  /**
+   * Update consulting firm project stats
+   */
+  async updateFirmStats(teamId: string, data: {
+    projectsCompleted?: number;
+    avgRating?: number;
+    responseRate?: number;
+  }) {
+    const team = await prisma.team.update({
+      where: { id: teamId },
+      data,
+      select: {
+        id: true,
+        name: true,
+        projectsCompleted: true,
+        avgRating: true,
+        responseRate: true,
+      },
+    });
+
+    logger.info(`Consulting firm stats updated: ${teamId}`);
+    return team;
+  }
+
+  /**
+   * Get consulting firm marketplace stats (admin)
+   */
+  async getConsultingFirmStats() {
+    const stats = await prisma.team.groupBy({
+      by: ['verificationStatus', 'partnerTier'],
+      _count: true,
+      where: {
+        isConsultingFirm: true,
+      },
+    });
+
+    const totalFirms = await prisma.team.count({
+      where: { isConsultingFirm: true },
+    });
+
+    const verifiedFirms = await prisma.team.count({
+      where: {
+        isConsultingFirm: true,
+        verificationStatus: { in: ['VERIFIED', 'FEATURED'] },
+      },
+    });
+
+    const avgTeamSize = await prisma.team.aggregate({
+      where: { isConsultingFirm: true },
+      _avg: {
+        teamSize: true,
+      },
+    });
+
+    const avgProjectsCompleted = await prisma.team.aggregate({
+      where: { isConsultingFirm: true },
+      _avg: {
+        projectsCompleted: true,
+      },
+    });
+
+    return {
+      totalFirms,
+      verifiedFirms,
+      avgTeamSize: avgTeamSize._avg.teamSize || 0,
+      avgProjectsCompleted: avgProjectsCompleted._avg.projectsCompleted || 0,
+      breakdown: stats,
+    };
+  }
+
+  /**
+   * Get detailed consulting firm profile with all related data
+   */
+  async getConsultingFirmProfile(teamId: string) {
+    const firm = await prisma.team.findUnique({
+      where: { id: teamId },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+                jobTitle: true,
+                bio: true,
+                talentRole: true,
+                talentTier: true,
+                verificationStatus: true,
+              },
+            },
+          },
+          orderBy: { joinedAt: 'asc' },
+        },
+        _count: {
+          select: {
+            members: true,
+            subTeams: true,
+          },
+        },
+      },
+    });
+
+    if (!firm) {
+      throw new Error('Consulting firm not found');
+    }
+
+    return {
+      ...firm,
+      aiSpecializations: firm.aiSpecializations ? JSON.parse(firm.aiSpecializations) : [],
+      techStack: firm.techStack ? JSON.parse(firm.techStack) : [],
+      industries: firm.industries ? JSON.parse(firm.industries) : [],
+      deliveryModels: firm.deliveryModels ? JSON.parse(firm.deliveryModels) : [],
+      officeLocations: firm.officeLocations ? JSON.parse(firm.officeLocations) : [],
+      certifications: firm.certifications ? JSON.parse(firm.certifications) : [],
+      caseStudyUrls: firm.caseStudyUrls ? JSON.parse(firm.caseStudyUrls) : [],
+      clientTestimonials: firm.clientTestimonials ? JSON.parse(firm.clientTestimonials) : [],
+      verificationData: firm.verificationData ? JSON.parse(firm.verificationData) : {},
+    };
   }
 }
 

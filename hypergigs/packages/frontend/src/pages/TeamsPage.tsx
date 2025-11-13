@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, X, MapPin, RefreshCw, Building2, Folder, Users, Briefcase } from 'lucide-react';
+import { Search, Filter, X, RefreshCw, Building2, Folder, Users, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Navigation from '@/components/Navigation';
+import TeamCard from '@/components/TeamCard';
 import { teamService } from '@/services/api/team.service';
-import { Link } from 'react-router-dom';
-import { stripHtmlTags } from '@/lib/utils';
 import type { TeamType } from '@/types/team';
 
 interface TeamData {
@@ -28,11 +26,17 @@ interface TeamData {
     projects: number;
     jobPostings?: number;
   };
+  // Consulting firm fields
+  isConsultingFirm?: boolean;
+  partnerTier?: string;
+  isVerified?: boolean;
+  aiSpecializations?: string[];
 }
 
 interface SearchFilters {
   type?: TeamType;
   city?: string;
+  isConsultingFirm?: boolean;
 }
 
 export default function TeamsPage() {
@@ -47,6 +51,7 @@ export default function TeamsPage() {
   const [filters, setFilters] = useState<SearchFilters>({
     type: undefined,
     city: undefined,
+    isConsultingFirm: undefined,
   });
 
   // Load teams
@@ -59,6 +64,7 @@ export default function TeamsPage() {
         search: searchQuery || undefined,
         type: filters.type,
         city: filters.city,
+        isConsultingFirm: filters.isConsultingFirm,
         limit: 50,
       });
 
@@ -92,6 +98,7 @@ export default function TeamsPage() {
     setFilters({
       type: undefined,
       city: undefined,
+      isConsultingFirm: undefined,
     });
     setSearchQuery('');
   };
@@ -104,40 +111,36 @@ export default function TeamsPage() {
         return <Building2 className="w-4 h-4" />;
       case 'ORGANIZATION':
         return <Folder className="w-4 h-4" />;
-      case 'DEPARTMENT':
-        return <Briefcase className="w-4 h-4" />;
       default:
         return <Users className="w-4 h-4" />;
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((word) => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   // Check if any filters are active
   const hasActiveFilters =
     filters.type ||
     filters.city ||
+    filters.isConsultingFirm !== undefined ||
     searchQuery.trim();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white pb-16">
       <Navigation />
 
-      <div className="pt-32 pb-16 px-4 sm:px-6 lg:px-4">
-        <div className="max-w-7xl mx-auto">
+      <div className="pt-0 pb-16 px-4 sm:px-6 lg:px-0">
+        <div className="hidden md:block absolute h-[35%] w-full bg-slate-100/20 border-0 md:border-b md:border-b md:border-slate-200 left-0 top-0"></div>
+        <div className="hidden md:block fixed min-h-full w-[12px] bg-slate-300/20 border-0 md:border-l md:border-l md:border-slate-200 right-0 top-0 pattern-background"></div>
+        <div className="hidden md:block fixed min-h-full w-[12px] bg-slate-300/20 border-0 md:border-r md:border-r md:border-slate-200 left-0 top-0 pattern-background"></div>
+
+        <div className="max-w-[80%] mx-auto border border-t-0 border-b-0 border-slate-200 shadow-none p-8 bg-white/40 relative z-10">
+
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-medium tracking-tight mb-4">
               Discover Top Teams
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
+            <p className="text-sm text-muted-foreground max-w-2xl">
               Browse through curated agencies and project teams ready to bring your ideas to life.
             </p>
           </div>
@@ -294,6 +297,18 @@ export default function TeamsPage() {
                           <Folder className="w-4 h-4" />
                           Organizations
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleFilterChange('isConsultingFirm', filters.isConsultingFirm === true ? undefined : true)}
+                          className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
+                            filters.isConsultingFirm === true
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-white border-border hover:border-primary'
+                          }`}
+                        >
+                          <Briefcase className="w-4 h-4" />
+                          AI Consulting Firms
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -407,7 +422,7 @@ export default function TeamsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             >
               {teams.map((team, index) => (
                 <motion.div
@@ -416,86 +431,7 @@ export default function TeamsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * Math.min(index, 10) }}
                 >
-                  <Card className="h-full border-border/40 bg-card/50 backdrop-blur">
-                    <CardHeader>
-                      <div className="flex items-center gap-4 mb-4">
-                        {team.avatar ? (
-                          <img
-                            src={team.avatar}
-                            alt={team.name}
-                            className="w-12 h-12 rounded-lg object-cover border border-border"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-foreground text-lg font-bold border border-border">
-                            {getInitials(team.name)}
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <CardTitle className="text-lg">
-                            {team.name}
-                          </CardTitle>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            {getTeamTypeIcon(team.type)}
-                            <span>{team.type}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      {team.description && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {stripHtmlTags(team.description)}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                        {team.city && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{team.city}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium">{team._count.members}</span>
-                          <span>members</span>
-                        </div>
-                        {team._count.projects > 0 && (
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">{team._count.projects}</span>
-                            <span>projects</span>
-                          </div>
-                        )}
-                        {team._count.jobPostings !== undefined && team._count.jobPostings > 0 && (
-                          <Link
-                            to={`/teams/${team.slug}/jobs`}
-                            className="flex items-center gap-1 text-primary hover:underline font-medium"
-                          >
-                            <Briefcase className="w-4 h-4" />
-                            <span>{team._count.jobPostings} {team._count.jobPostings === 1 ? 'job' : 'jobs'}</span>
-                          </Link>
-                        )}
-                      </div>
-                    </CardContent>
-
-                    <CardFooter className="flex gap-2">
-                      <Link
-                        to={`/teams/${team.slug}`}
-                        className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
-                      >
-                        View Team
-                      </Link>
-                      {team._count.jobPostings !== undefined && team._count.jobPostings > 0 && (
-                        <Link
-                          to={`/teams/${team.slug}/jobs`}
-                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
-                        >
-                          <Briefcase className="w-4 h-4" />
-                          Jobs
-                        </Link>
-                      )}
-                    </CardFooter>
-                  </Card>
+                  <TeamCard team={team} />
                 </motion.div>
               ))}
             </motion.div>

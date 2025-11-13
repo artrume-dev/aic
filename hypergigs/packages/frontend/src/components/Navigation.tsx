@@ -16,11 +16,11 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="sticky relative top-2 max-w-[80%] z-50 backdrop-blur-lg mx-4 md:mx-auto">
-      <div className="mx-auto sm:px-6 lg:px-8 py-4 border border-slate-300 rounded-xl bg-white">
+    <nav className="sticky relative top-0 max-w-full z-50 border-0 border-b border-slate-200 mx-4 md:mx-auto">
+      <div className="mx-auto sm:px-6 lg:px-8 py-4 border-0 bg-slate-100/80 backdrop-blur-xl relative">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold tracking-tight uppercase">
+          <Link to="/" className="text-lg font-bold tracking-tight uppercase">
             Hypergigs
           </Link>
           

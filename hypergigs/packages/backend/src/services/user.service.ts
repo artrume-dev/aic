@@ -674,6 +674,346 @@ export class UserService {
       orderBy: { startDate: 'desc' },
     });
   }
+
+  // ============================================
+  // AI CONSULTING MARKETPLACE FEATURES
+  // ============================================
+
+  /**
+   * Update AI talent marketplace profile
+   */
+  async updateTalentProfile(userId: string, data: {
+    isAITalent?: boolean;
+    talentRole?: string;
+    talentTier?: string;
+    employmentPreference?: string;
+    timezone?: string;
+    githubUrl?: string;
+    hourlyRateMax?: number;
+    availabilityStatus?: string;
+  }) {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        isAITalent: true,
+        talentRole: true,
+        talentTier: true,
+        employmentPreference: true,
+        timezone: true,
+        githubUrl: true,
+        hourlyRate: true,
+        hourlyRateMax: true,
+        availabilityStatus: true,
+      },
+    });
+
+    logger.info(`AI talent profile updated: ${userId}`);
+    return user;
+  }
+
+  /**
+   * Search AI talent with advanced filters
+   */
+  async searchAITalent(filters: {
+    talentRole?: string;
+    talentTier?: string;
+    employmentPreference?: string;
+    verificationStatus?: string;
+    verificationTier?: string;
+    availabilityStatus?: string;
+    skills?: string[]; // Array of skill IDs or names
+    minHourlyRate?: number;
+    maxHourlyRate?: number;
+    timezone?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const where: any = {
+      isAITalent: true,
+    };
+
+    if (filters.talentRole) {
+      where.talentRole = filters.talentRole;
+    }
+
+    if (filters.talentTier) {
+      where.talentTier = filters.talentTier;
+    }
+
+    if (filters.employmentPreference) {
+      where.employmentPreference = filters.employmentPreference;
+    }
+
+    if (filters.verificationStatus) {
+      where.verificationStatus = filters.verificationStatus;
+    }
+
+    if (filters.verificationTier) {
+      where.verificationTier = filters.verificationTier;
+    }
+
+    if (filters.availabilityStatus) {
+      where.availabilityStatus = filters.availabilityStatus;
+    }
+
+    if (filters.timezone) {
+      where.timezone = { contains: filters.timezone };
+    }
+
+    if (filters.minHourlyRate !== undefined || filters.maxHourlyRate !== undefined) {
+      where.hourlyRate = {};
+      if (filters.minHourlyRate !== undefined) {
+        where.hourlyRate.gte = filters.minHourlyRate;
+      }
+      if (filters.maxHourlyRate !== undefined) {
+        where.hourlyRate.lte = filters.maxHourlyRate;
+      }
+    }
+
+    // Filter by skills if provided
+    if (filters.skills && filters.skills.length > 0) {
+      where.skills = {
+        some: {
+          OR: [
+            { skillId: { in: filters.skills } },
+            { skill: { name: { in: filters.skills } } },
+          ],
+        },
+      };
+    }
+
+    const talent = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        jobTitle: true,
+        location: true,
+        timezone: true,
+        talentRole: true,
+        talentTier: true,
+        employmentPreference: true,
+        hourlyRate: true,
+        hourlyRateMax: true,
+        currency: true,
+        availabilityStatus: true,
+        verificationStatus: true,
+        verificationTier: true,
+        aiSkillScore: true,
+        portfolioScore: true,
+        experienceScore: true,
+        overallScore: true,
+        githubUrl: true,
+        skills: {
+          include: {
+            skill: true,
+          },
+          take: 10,
+        },
+        _count: {
+          select: {
+            portfolios: true,
+            workExperiences: true,
+          },
+        },
+      },
+      orderBy: [
+        { verificationStatus: 'desc' },
+        { overallScore: 'desc' },
+      ],
+      take: filters.limit || 20,
+      skip: filters.offset || 0,
+    });
+
+    logger.info(`Found ${talent.length} AI talent matching filters`);
+    return talent;
+  }
+
+  /**
+   * Update user verification status (admin only)
+   */
+  async updateVerificationStatus(userId: string, data: {
+    verificationStatus: string;
+    verificationTier?: string;
+    verificationData?: any;
+    verifiedBy?: string;
+    aiSkillScore?: number;
+    portfolioScore?: number;
+    experienceScore?: number;
+    overallScore?: number;
+  }) {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        verificationStatus: data.verificationStatus,
+        verificationTier: data.verificationTier,
+        verificationData: data.verificationData ? JSON.stringify(data.verificationData) : undefined,
+        verificationDate: new Date(),
+        verifiedBy: data.verifiedBy,
+        aiSkillScore: data.aiSkillScore,
+        portfolioScore: data.portfolioScore,
+        experienceScore: data.experienceScore,
+        overallScore: data.overallScore,
+      },
+      select: {
+        id: true,
+        verificationStatus: true,
+        verificationTier: true,
+        verificationDate: true,
+        verifiedBy: true,
+        aiSkillScore: true,
+        portfolioScore: true,
+        experienceScore: true,
+        overallScore: true,
+      },
+    });
+
+    logger.info(`User verification updated: ${userId} - ${data.verificationStatus}`);
+    return user;
+  }
+
+  /**
+   * Get verification data for a user
+   */
+  async getVerificationData(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        verificationStatus: true,
+        verificationTier: true,
+        verificationData: true,
+        verificationDate: true,
+        verifiedBy: true,
+        aiSkillScore: true,
+        portfolioScore: true,
+        experienceScore: true,
+        overallScore: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      ...user,
+      verificationData: user.verificationData ? JSON.parse(user.verificationData) : {},
+    };
+  }
+
+  /**
+   * Update AI skill scores (for verification system)
+   */
+  async updateSkillScores(userId: string, scores: {
+    aiSkillScore?: number;
+    portfolioScore?: number;
+    experienceScore?: number;
+  }) {
+    // Calculate overall score as weighted average
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        aiSkillScore: true,
+        portfolioScore: true,
+        experienceScore: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const aiSkillScore = scores.aiSkillScore ?? user.aiSkillScore ?? 0;
+    const portfolioScore = scores.portfolioScore ?? user.portfolioScore ?? 0;
+    const experienceScore = scores.experienceScore ?? user.experienceScore ?? 0;
+
+    // Weighted average: 40% skills, 35% portfolio, 25% experience
+    const overallScore = Math.round(
+      aiSkillScore * 0.4 + portfolioScore * 0.35 + experienceScore * 0.25
+    );
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        aiSkillScore,
+        portfolioScore,
+        experienceScore,
+        overallScore,
+      },
+      select: {
+        id: true,
+        aiSkillScore: true,
+        portfolioScore: true,
+        experienceScore: true,
+        overallScore: true,
+      },
+    });
+
+    logger.info(`User skill scores updated: ${userId} - Overall: ${overallScore}`);
+    return updatedUser;
+  }
+
+  /**
+   * Update user availability status
+   */
+  async updateAvailabilityStatus(userId: string, status: string) {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { availabilityStatus: status },
+      select: {
+        id: true,
+        availabilityStatus: true,
+      },
+    });
+
+    logger.info(`User availability updated: ${userId} - ${status}`);
+    return user;
+  }
+
+  /**
+   * Get talent marketplace stats (admin)
+   */
+  async getTalentStats() {
+    const stats = await prisma.user.groupBy({
+      by: ['verificationStatus', 'talentTier', 'talentRole'],
+      _count: true,
+      where: {
+        isAITalent: true,
+      },
+    });
+
+    const totalTalent = await prisma.user.count({
+      where: { isAITalent: true },
+    });
+
+    const verifiedTalent = await prisma.user.count({
+      where: {
+        isAITalent: true,
+        verificationStatus: { in: ['VERIFIED', 'FEATURED'] },
+      },
+    });
+
+    const availableTalent = await prisma.user.count({
+      where: {
+        isAITalent: true,
+        availabilityStatus: 'AVAILABLE',
+      },
+    });
+
+    return {
+      totalTalent,
+      verifiedTalent,
+      availableTalent,
+      breakdown: stats,
+    };
+  }
 }
 
 export const userService = new UserService();

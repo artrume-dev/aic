@@ -14,6 +14,7 @@ import type {
   PaginatedUsers,
 } from '@/types/user';
 import type { User } from '@/types/auth';
+import type { Education, CreateEducationRequest, UpdateEducationRequest } from '@/types/education';
 
 export const userService = {
   /**
@@ -169,5 +170,48 @@ export const userService = {
    */
   async deleteExperience(experienceId: string): Promise<void> {
     await api.delete(`/api/users/me/experience/${experienceId}`);
+  },
+
+  // Education
+  /**
+   * Get user education
+   */
+  async getEducation(userId: string): Promise<Education[]> {
+    const response = await api.get<{ education: Education[] }>(
+      `/api/education/user/${userId}`
+    );
+    return response.data.education;
+  },
+
+  /**
+   * Add education
+   */
+  async addEducation(data: CreateEducationRequest): Promise<Education> {
+    const response = await api.post<{ education: Education }>(
+      '/api/education/me',
+      data
+    );
+    return response.data.education;
+  },
+
+  /**
+   * Update education
+   */
+  async updateEducation(
+    educationId: string,
+    data: UpdateEducationRequest
+  ): Promise<Education> {
+    const response = await api.put<{ education: Education }>(
+      `/api/education/me/${educationId}`,
+      data
+    );
+    return response.data.education;
+  },
+
+  /**
+   * Delete education
+   */
+  async deleteEducation(educationId: string): Promise<void> {
+    await api.delete(`/api/education/me/${educationId}`);
   },
 };

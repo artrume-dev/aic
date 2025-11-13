@@ -14,7 +14,11 @@ import {
   Building2,
   Folder,
   Plus,
-  Edit
+  Edit,
+  Globe,
+  TrendingUp,
+  Award,
+  Package
 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import AddMemberDialog from '@/components/AddMemberDialog';
@@ -23,13 +27,15 @@ import SubTeamDialog from '@/components/SubTeamDialog';
 import JobPostingCard from '@/components/JobPostingCard';
 import JobPostingDialog from '@/components/JobPostingDialog';
 import EditTeamAvatarDialog from '@/components/EditTeamAvatarDialog';
+import { VerificationBadge } from '@/components/ui/VerificationBadge';
+import { PartnerTierBadge } from '@/components/ui/PartnerTierBadge';
 import { useState, useEffect } from 'react';
 import { teamService } from '@/services/api/team.service';
 import { jobService } from '@/services/api/job.service';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { stripHtmlTags } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
-import type { TeamType, TeamRole, Team } from '@/types/team';
+import type { TeamType, TeamRole, Team, PartnerTier } from '@/types/team';
 import type { JobPosting } from '@/types/job';
 
 interface TeamMemberData {
@@ -58,6 +64,7 @@ interface TeamDetailData {
   type: TeamType;
   city?: string;
   avatar?: string;
+  website?: string;
   createdAt: string;
   updatedAt: string;
   ownerId: string;
@@ -76,6 +83,18 @@ interface TeamDetailData {
     members: number;
     projects: number;
   };
+
+  // Consulting firm fields
+  isConsultingFirm?: boolean;
+  partnerTier?: PartnerTier;
+  verificationStatus?: string;
+  aiSpecializations?: string[];
+  techStack?: string[];
+  industries?: string[];
+  deliveryModels?: string[];
+  teamSize?: number;
+  foundedYear?: number;
+  minProjectBudget?: number;
 }
 
 export default function TeamDetailPage() {
@@ -193,8 +212,6 @@ export default function TeamDetailPage() {
         return <Building2 className="w-5 h-5" />;
       case 'ORGANIZATION':
         return <Folder className="w-5 h-5" />;
-      case 'DEPARTMENT':
-        return <Briefcase className="w-5 h-5" />;
       default:
         return <Users className="w-5 h-5" />;
     }
@@ -303,10 +320,10 @@ export default function TeamDetailPage() {
                       <img
                         src={team.avatar}
                         alt={team.name}
-                        className="w-24 h-24 rounded-lg object-cover border border-border"
+                        className="w-24 h-24 rounded-full object-cover border border-border"
                       />
                     ) : (
-                      <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-foreground text-2xl font-bold border border-border">
+                      <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-foreground text-2xl font-bold border border-border">
                         {team.isMainTeam ? (
                           getInitials(team.name.split(' ')[0], team.name.split(' ')[1] || '')
                         ) : (
@@ -333,10 +350,26 @@ export default function TeamDetailPage() {
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div>
                         <h1 className="text-4xl font-bold mb-2">{team.name}</h1>
-                        <div className="flex items-center gap-2 text-muted-foreground">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
                           {getTeamTypeIcon(team.type)}
                           <span className="font-medium">{team.type}</span>
+                          {team.isConsultingFirm && (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                              AI Consulting Firm
+                            </span>
+                          )}
                         </div>
+                        {/* Badges */}
+                        {team.isConsultingFirm && (
+                          <div className="flex items-center gap-2">
+                            {team.verificationStatus && (
+                              <VerificationBadge status={team.verificationStatus} size="sm" />
+                            )}
+                            {team.partnerTier && (
+                              <PartnerTierBadge tier={team.partnerTier} size="sm" />
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Action Buttons */}
@@ -409,6 +442,131 @@ export default function TeamDetailPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Consulting Firm Profile */}
+                {team.isConsultingFirm && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h3 className="text-lg font-semibold mb-4">Consulting Firm Profile</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* AI Specializations */}
+                      {team.aiSpecializations && team.aiSpecializations.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                            <Award className="w-4 h-4" />
+                            AI Specializations
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {team.aiSpecializations.map((spec) => (
+                              <span
+                                key={spec}
+                                className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium"
+                              >
+                                {spec}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tech Stack */}
+                      {team.techStack && team.techStack.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                            <Package className="w-4 h-4" />
+                            Tech Stack
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {team.techStack.map((tech) => (
+                              <span
+                                key={tech}
+                                className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Industries */}
+                      {team.industries && team.industries.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                            <Building2 className="w-4 h-4" />
+                            Industries Served
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {team.industries.map((industry) => (
+                              <span
+                                key={industry}
+                                className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm"
+                              >
+                                {industry}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Delivery Models */}
+                      {team.deliveryModels && team.deliveryModels.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" />
+                            Delivery Models
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {team.deliveryModels.map((model) => (
+                              <span
+                                key={model}
+                                className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm"
+                              >
+                                {model.replace(/_/g, ' ')}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Team Size & Founded */}
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          Company Info
+                        </h4>
+                        <div className="space-y-1 text-sm">
+                          {team.teamSize && (
+                            <p><span className="font-medium">Team Size:</span> {team.teamSize} consultants</p>
+                          )}
+                          {team.foundedYear && (
+                            <p><span className="font-medium">Founded:</span> {team.foundedYear}</p>
+                          )}
+                          {team.minProjectBudget && (
+                            <p><span className="font-medium">Min Project:</span> ${team.minProjectBudget.toLocaleString()}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Website */}
+                      {team.website && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Website
+                          </h4>
+                          <a
+                            href={team.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 hover:underline text-sm"
+                          >
+                            {team.website}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardHeader>
             </Card>
           </motion.div>
@@ -452,7 +610,7 @@ export default function TeamDetailPage() {
                         {team.members.map((member) => (
                           <div
                             key={member.id}
-                            className="flex items-center gap-4 p-4 rounded-lg border border-border bg-background/50"
+                            className="flex items-center gap-4 p-4 rounded-full border border-border bg-background/50"
                           >
                             {/* Member Avatar */}
                             <Link to={`/profile/${member.user.username}`}>
