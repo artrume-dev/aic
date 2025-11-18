@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
+import { useUIStore } from '@/stores/uiStore';
 import {
   LayoutDashboard,
   Users,
@@ -10,6 +12,8 @@ import {
   Briefcase,
   MessageSquare,
   Award,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -66,13 +70,40 @@ const navItems: NavItem[] = [
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const location = useLocation();
+  const { isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useUIStore();
+
+  // Collapse sidebar on Dashboard page by default
+  useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      setSidebarCollapsed(true);
+    }
+  }, [location.pathname, setSidebarCollapsed]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
 
       <div className="flex pt-16">
         {/* Left Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-4rem)] bg-card border-r border-border fixed left-0 top-16">
+        <aside
+          className={`min-h-[calc(100vh-4rem)] bg-card border-r border-border fixed left-0 top-16 transition-all duration-300 ease-in-out ${
+            isSidebarCollapsed ? 'w-20' : 'w-64'
+          }`}
+        >
+          {/* Toggle Button */}
+          <button
+            onClick={toggleSidebar}
+            className="absolute -right-3 top-6 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg hover:bg-primary/90 transition-colors z-10"
+            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+
           <nav className="p-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -86,11 +117,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       isActive
                         ? 'bg-primary text-primary-foreground font-medium'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`
+                    } ${isSidebarCollapsed ? 'justify-center' : ''}`
                   }
+                  title={isSidebarCollapsed ? item.label : undefined}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  {!isSidebarCollapsed && <span>{item.label}</span>}
                 </NavLink>
               );
             })}
@@ -98,7 +130,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 ml-64">
+        <main
+          className={`flex-1 transition-all duration-300 ease-in-out ${
+            isSidebarCollapsed ? 'ml-20' : 'ml-64'
+          }`}
+        >
           <div className="container mx-auto px-4 py-8">
             {children}
           </div>

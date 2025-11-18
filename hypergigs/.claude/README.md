@@ -6,13 +6,17 @@ This directory contains configuration files for Claude Code sub-agents and comma
 
 ```
 .claude/
-├── README.md                 # This file
-├── PROJECT-SUMMARY.md        # Comprehensive project documentation
-├── ui-agent.md              # UI/Frontend agent configuration
-├── backend-agent.md         # Backend/API agent configuration
-└── commands/
-    ├── ui.md                # /ui slash command
-    └── backend.md           # /backend slash command
+├── README.md                    # This file
+├── PROJECT-SUMMARY.md           # Comprehensive project documentation
+├── ui-agent.md                  # UI/Frontend agent configuration
+├── backend-agent.md             # Backend/API agent configuration
+├── code-validator-agent.md      # Enterprise code quality agent
+├── security-auditor-agent.md    # Security vulnerability agent
+└── agents/
+    ├── ui.md                    # /ui slash command
+    ├── backend.md               # /backend slash command
+    ├── code-validator.md        # /code-validator slash command
+    └── security-auditor.md      # /security-auditor slash command
 ```
 
 ## 🎯 Available Sub-Agents
@@ -63,6 +67,53 @@ This directory contains configuration files for Claude Code sub-agents and comma
 /backend Create a service method to calculate user engagement metrics
 ```
 
+### 3. Code Validator Agent (`code-validator-agent.md`)
+**Purpose:** Enterprise-level code quality validation
+
+**Expertise:**
+- SOLID principles and design patterns
+- Code complexity and maintainability analysis
+- Type safety enforcement (strict TypeScript)
+- Error handling and logging validation
+- Architecture and design pattern review
+- Performance optimization and scalability
+- Testing coverage and quality assessment
+- Documentation completeness verification
+
+**Invoke with:** `/code-validator`
+
+**Example usage:**
+```
+/code-validator Review the user authentication module for code quality
+/code-validator Validate the new payment processing feature
+/code-validator Check if the API endpoints follow enterprise standards
+/code-validator Analyze the React components for best practices
+```
+
+### 4. Security Auditor Agent (`security-auditor-agent.md`)
+**Purpose:** Security vulnerability detection and prevention
+
+**Expertise:**
+- OWASP Top 10 vulnerability detection
+- Authentication and authorization security
+- Input validation and sanitization
+- SQL injection and XSS prevention
+- JWT token and session security
+- API security (CORS, rate limiting, headers)
+- Secrets management and encryption
+- Dependency vulnerability scanning
+- Secure coding practices
+
+**Invoke with:** `/security-auditor`
+
+**Example usage:**
+```
+/security-auditor Audit the authentication system for vulnerabilities
+/security-auditor Check the API endpoints for security issues
+/security-auditor Review the file upload feature for security risks
+/security-auditor Scan the entire backend for OWASP Top 10 vulnerabilities
+```
+
 ## 📚 Key Documentation Files
 
 ### PROJECT-SUMMARY.md
@@ -104,6 +155,50 @@ This directory contains configuration files for Claude Code sub-agents and comma
 - When implementing forms
 - When adding animations
 - When ensuring accessibility
+
+### code-validator-agent.md
+**Purpose:** Enterprise code quality standards and validation
+
+**Contents:**
+- SOLID principles with examples
+- Code complexity metrics
+- Type safety standards
+- Error handling patterns
+- Database optimization
+- React optimization techniques
+- Performance best practices
+- Code review checklists
+- Anti-patterns to avoid
+- Validation report templates
+
+**When to read:**
+- Before merging new features
+- When reviewing code quality
+- When refactoring code
+- When establishing coding standards
+- When training team members
+
+### security-auditor-agent.md
+**Purpose:** Security vulnerability detection and prevention
+
+**Contents:**
+- OWASP Top 10 vulnerabilities
+- Authentication/authorization patterns
+- Input validation techniques
+- SQL injection prevention
+- XSS and CSRF protection
+- JWT security best practices
+- Secrets management
+- Security headers configuration
+- Dependency security scanning
+- Security audit checklists
+
+**When to read:**
+- Before deploying to production
+- When handling sensitive data
+- When implementing authentication
+- When creating new API endpoints
+- During security audits
 
 ## 🚀 How to Use Sub-Agents
 
@@ -232,6 +327,10 @@ Now, please tell me what [type of task] you'd like me to help with.
 - ✅ /ui command - UI agent slash command
 - ✅ backend-agent.md - Backend specialist configuration (21 KB)
 - ✅ /backend command - Backend agent slash command
+- ✅ code-validator-agent.md - Enterprise code quality agent (33 KB)
+- ✅ /code-validator command - Code validation slash command
+- ✅ security-auditor-agent.md - Security vulnerability agent (44 KB)
+- ✅ /security-auditor command - Security audit slash command
 - ✅ README.md - This documentation file
 
 ### To Do:
@@ -244,8 +343,10 @@ Now, please tell me what [type of task] you'd like me to help with.
 1. **Planning**: Review PROJECT-SUMMARY.md for architecture
 2. **Backend**: Use `/backend` to create API endpoints, update schema
 3. **Frontend**: Use `/ui` to create components
-4. **Testing**: Test all states and edge cases
-5. **Documentation**: Update relevant docs
+4. **Code Quality**: Use `/code-validator` to review implementation
+5. **Security**: Use `/security-auditor` to check for vulnerabilities
+6. **Testing**: Test all states and edge cases
+7. **Documentation**: Update relevant docs
 
 ### UI-Only Task
 1. `/ui Create a new Settings page`
@@ -260,6 +361,20 @@ Now, please tell me what [type of task] you'd like me to help with.
 3. Agent creates route → controller → service
 4. Agent updates database schema if needed
 5. Agent adds validation and error handling
+
+### Code Quality Review
+1. `/code-validator Review the authentication module`
+2. Agent analyzes code against enterprise standards
+3. Agent checks SOLID principles, type safety, error handling
+4. Agent provides categorized issues (Critical → Low)
+5. Agent suggests improvements with code examples
+
+### Security Audit
+1. `/security-auditor Audit the user management API`
+2. Agent scans for OWASP Top 10 vulnerabilities
+3. Agent checks authentication, authorization, input validation
+4. Agent runs `npm audit` for dependency issues
+5. Agent provides severity-based report with fixes
 
 ---
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, X, RefreshCw, Building2, Folder, Users, Briefcase } from 'lucide-react';
+import { Search, Filter, X, RefreshCw, Building2, Folder, Users, Briefcase, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import TeamCard from '@/components/TeamCard';
@@ -103,20 +103,6 @@ export default function TeamsPage() {
     setSearchQuery('');
   };
 
-  const getTeamTypeIcon = (type: TeamType) => {
-    switch (type) {
-      case 'TEAM':
-        return <Users className="w-4 h-4" />;
-      case 'COMPANY':
-        return <Building2 className="w-4 h-4" />;
-      case 'ORGANIZATION':
-        return <Folder className="w-4 h-4" />;
-      default:
-        return <Users className="w-4 h-4" />;
-    }
-  };
-
-
   // Check if any filters are active
   const hasActiveFilters =
     filters.type ||
@@ -125,44 +111,47 @@ export default function TeamsPage() {
     searchQuery.trim();
 
   return (
-    <div className="min-h-screen bg-white pb-16">
+    <div className="min-h-screen bg-slate-100 flex">
       <Navigation />
 
-      <div className="pt-0 pb-16 px-4 sm:px-6 lg:px-0">
-        <div className="hidden md:block absolute h-[35%] w-full bg-slate-100/20 border-0 md:border-b md:border-b md:border-slate-200 left-0 top-0"></div>
-        <div className="hidden md:block fixed min-h-full w-[12px] bg-slate-300/20 border-0 md:border-l md:border-l md:border-slate-200 right-0 top-0 pattern-background"></div>
-        <div className="hidden md:block fixed min-h-full w-[12px] bg-slate-300/20 border-0 md:border-r md:border-r md:border-slate-200 left-0 top-0 pattern-background"></div>
+      {/* Main content with sidebar spacing */}
+      <div className="md:ml-[100px] pt-0 pb-16 px-4 sm:px-6 lg:px-8">
+        {/* Top decorative banner */}
+        {/* <div className="hidden md:block fixed h-full w-full md:w-[calc(100%-100px)] bg-gray-200/10 border-0 md:border-b md:border-gray-200 right-0 top-0 pattern-background"></div> */}
+        
+        {/* Right vertical pattern line */}
+        {/* <div className="hidden md:block absolute h-screen w-[10px] bg-slate-300/20 border-0 md:border-l md:border-slate-200 left-[120px] top-[23%] pattern-background"></div> */}
 
-        <div className="max-w-[80%] mx-auto border border-t-0 border-b-0 border-slate-200 shadow-none p-8 bg-white/40 relative z-10">
+        <div className="w-full mx-auto py-8 relative z-10">
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-medium tracking-tight mb-4">
+          <div className="mb-8 text-center max-w-4xl mx-auto">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight mb-2">
               Discover Top Teams
             </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl">
+            <p className="text-sm text-slate-700">
               Browse through curated agencies and project teams ready to bring your ideas to life.
             </p>
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="mb-8 space-y-4">
+          <div className="mb-8 space-y-2 max-w-4xl mx-auto">
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex gap-3">
+            <form onSubmit={handleSearch} className="flex gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search teams by name or description..."
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent text-base"
                   aria-label="Search teams"
                 />
               </div>
               <button
                 type="submit"
-                className="px-8 py-4 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium whitespace-nowrap"
+                className="px-8 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-normal whitespace-nowrap"
                 aria-label="Search"
               >
                 Search
@@ -170,7 +159,7 @@ export default function TeamsPage() {
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-6 py-4 rounded-xl border transition-all font-medium flex items-center gap-2 whitespace-nowrap ${
+                className={`px-6 py-3 rounded-xl border transition-all font-medium flex items-center gap-2 whitespace-nowrap ${
                   showFilters || hasActiveFilters
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-white border-border hover:border-primary'
@@ -417,12 +406,16 @@ export default function TeamsPage() {
           )}
 
           {/* Teams Grid */}
+
+          <div className="mb-8 h-full py-8 border-t border-slate-300/50">
+          
+          
           {!isLoading && !error && teams.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {teams.map((team, index) => (
                 <motion.div
@@ -437,6 +430,7 @@ export default function TeamsPage() {
             </motion.div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
