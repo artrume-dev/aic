@@ -41,18 +41,16 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex fixed left-0 bottom-0 h-screen w-[100px] bg-white/95 border-r border-slate-200 z-50 flex-col">
-        {/* Logo */}
-        <div className="px-4 py-6 border-b border-slate-200">
-          <Link to="/" className="text-xl font-bold tracking-tight uppercase text-center block">
-            H
+      {/* Desktop Top Navigation */}
+      <nav className="hidden md:block fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-sm border-b border-slate-200 z-50">
+        <div className="container mx-auto px-4 h-full flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="text-xl font-bold tracking-tight uppercase">
+            HYPERGIGS
           </Link>
-        </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto py-2 px-3">
-          <div className="space-y-1">
+          {/* Navigation Links */}
+          <div className="flex items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
@@ -60,96 +58,86 @@ export default function Navigation() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex flex-col items-center rounded-lg justify-center gap-2 px-4 py-3 text-xs font-normal transition-all text-slate-800 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     active
-                      ? 'border border-blue-100'
-                      : 'text-muted-foreground hover:bg-slate-50 hover:text-foreground'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <Icon 
-                  className={`w-4 h-4 flex-shrink-0 text-slate-900" ${
-                   active
-                      ? 'text-amber-700'
-                      : 'text-slate-950 '
-                  }`}
-                   
-                   />
-                  <span className="text-center">{item.label}</span>
+                  <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
           </div>
-        </nav>
 
-        {/* Bottom Section */}
-        <div className="border-t border-slate-200 p-2 space-y-1">
-          {user ? (
-            <>
-              <Link
-                to="/dashboard"
-                className={`flex flex-col items-center rounded-lg justify-center gap-2 px-4 py-3 text-xs font-normal transition-all text-slate-800 ${
-                  isActive('/dashboard')
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-slate-100 hover:text-foreground'
-                }`}
-              >
-                <LayoutDashboard strokeWidth={1} className="w-4 h-4 flex-shrink-0" />
-                <span className="text-center">Dashboard</span>
-              </Link>
-              <Link
-                to={`/profile/${user.username}`}
-                className={`flex flex-col items-center rounded-lg justify-center gap-2 px-4 py-3 text-xs font-normal transition-all text-slate-800 ${
-                  location.pathname.includes('/profile')
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-slate-100 hover:text-foreground'
-                }`}
-              >
-                {user.avatar ? (
-                  <img 
-                    src={user.avatar} 
-                    alt={user.firstName}
-                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-medium text-primary">
-                      {user.firstName?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <span className="text-center truncate w-full text-slate-800">{user.firstName}</span>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="w-full flex flex-col items-center justify-center gap-2 px-3 py-3 h-auto text-xs font-medium text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-              >
-                <LogOut strokeWidth={1} className="w-4 h-4 flex-shrink-0 text-slate-700" />
-                <span className="text-center text-slate-800 ">Sign Out</span>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-xs font-medium transition-colors hover:bg-slate-100"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/register"
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get Started
-              </Link>
-            </>
-          )}
-          <div className="flex justify-center pt-2">
-            {/* <ThemeToggle /> */}
+          {/* Right Section */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive('/dashboard')
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                  <span>Dashboard</span>
+                </Link>
+                <Link
+                  to={`/profile/${user.username}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    location.pathname.includes('/profile')
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.firstName}
+                      className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-medium text-primary">
+                        {user.firstName?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span>{user.firstName}</span>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="gap-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <LogOut className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                  <span>Sign Out</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
-      </aside>
+      </nav>
 
       {/* Mobile Menu Button */}
       <div className="md:hidden fixed top-4 left-4 z-50">

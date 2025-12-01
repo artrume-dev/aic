@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import DashboardLayout from './components/DashboardLayout';
+import MainLayout from './components/MainLayout';
 import DashboardHome from './pages/DashboardHome';
 import ProfilePage from './pages/ProfilePage';
 import MyTeamsPage from './pages/MyTeamsPage';
@@ -34,10 +35,10 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/teams" element={<TeamsPage />} />
-            <Route path="/teams/:teamSlug/jobs" element={<TeamJobsPage />} />
-            <Route path="/teams/:identifier" element={<TeamDetailPage />} />
-            <Route path="/freelancers" element={<FreelancersPage />} />
+            <Route path="/teams" element={<MainLayout><TeamsPage /></MainLayout>} />
+            <Route path="/teams/:teamSlug/jobs" element={<MainLayout><TeamJobsPage /></MainLayout>} />
+            <Route path="/teams/:identifier" element={<MainLayout><TeamDetailPage /></MainLayout>} />
+            <Route path="/freelancers" element={<MainLayout><FreelancersPage /></MainLayout>} />
 
             {/* Protected team routes */}
             <Route element={<ProtectedRoute />}>
